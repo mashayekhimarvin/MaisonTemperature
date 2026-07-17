@@ -41,23 +41,48 @@
 <script>
 
 
-const labels = {{ labels|tojson }};
+const salon = {{ salon|tojson }};
+const chambre = {{ chambre|tojson }};
+const cuisine = {{ cuisine|tojson }};
 
-const temperatures = {{ valeurs_temperature|tojson }};
 
+const labels = [];
+
+for (let i = 0; i < salon.length; i++) {
+    labels.push("Mesure " + (i + 1));
+}
 
 const ctx = document.getElementById("temperatureChart");
+
+
 
 new Chart(ctx, {
     type: "line",
     data: {
         labels: labels,
-        datasets: [{
-            label: "Température",
-            data: temperatures
-        }]
+        datasets: [
+            {
+                label: "Salon",
+                data: salon,
+                borderColor: "blue",
+                fill: false
+            },
+            {
+                label: "Chambre",
+                data: chambre,
+                borderColor: "red",
+                fill: false
+            },
+            {
+                label: "Cuisine",
+                data: cuisine,
+                borderColor: "green",
+                fill: false
+            }
+        ]
     }
 });
+
 
 </script>
 

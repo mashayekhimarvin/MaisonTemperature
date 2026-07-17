@@ -11,20 +11,56 @@ app = Flask(
 @app.route("/")
 def home():
     temperatures = get_temperatures()
+    print("=== CONTENU SQLITE ===")
+    for t in temperatures:
+        print(t)
+
     
     labels = []
     valeurs_temperature = []
+    salon = []
+    chambre = []
+    cuisine = []
+
 
     for t in temperatures:
+
+        piece = t[1]
+        temperature = t[2]
         labels.append(t[4])
         valeurs_temperature.append(t[2])
 
+        if piece == "Salon":
+            salon.append(temperature)
+
+        elif piece == "Chambre":
+            chambre.append(temperature)
+
+        elif piece == "Cuisine":
+            cuisine.append(temperature)
+
+
+    
     return render_template(
         "index.html",
         temperatures=temperatures,
-        labels=labels,
-        valeurs_temperature=valeurs_temperature
+        salon=salon,
+        chambre=chambre,
+        cuisine=cuisine
     )
+
+
+
+    # for t in temperatures:
+    #     labels.append(t[4])
+    #     valeurs_temperature.append(t[2])
+
+    # return render_template(
+    #     "index.html",
+    #     temperatures=temperatures,
+    #     labels=labels,
+    #     valeurs_temperature=valeurs_temperature
+    # )
 
 
 if __name__ == "__main__":
