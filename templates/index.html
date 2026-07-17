@@ -1,11 +1,66 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta charset="UTF-8">
-    <title>Maison Temperature</title>
+    <title>MaisonTemperature</title>
+    
+    <link href="static/style.css" rel="stylesheet"/>
 </head>
+
 <body>
-    <h1>🏠 Maison Temperature</h1>
-    <p>Application démarrée avec succès !</p>
+
+<h1>🏠 MaisonTemperature</h1>
+<canvas id="temperatureChart"></canvas>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Pièce</th>
+            <th>Température</th>
+            <th>Humidité</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for t in temperatures %}
+        <tr>
+            <td>{{ t[0] }}</td>
+            <td>{{ t[1] }}</td>
+            <td>{{ t[2] }} °C</td>
+            <td>{{ t[3] }} %</td>
+            <td>{{ t[4] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+
+
+const labels = {{ labels|tojson }};
+
+const temperatures = {{ valeurs_temperature|tojson }};
+
+
+const ctx = document.getElementById("temperatureChart");
+
+new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "Température",
+            data: temperatures
+        }]
+    }
+});
+
+</script>
+
+
 </body>
 </html>
