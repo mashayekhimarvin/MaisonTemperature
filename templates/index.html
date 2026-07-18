@@ -31,6 +31,51 @@
     </a>
     {% endif %}
 </div>
+
+
+<div class="dashboard-summary">
+    <div class="card">
+        <h2>Dernières mesures</h2>
+        <ul class="last-measures">
+        {% for piece, mesure in last_measures.items() %}
+            <li>
+                <strong>{{ piece }}</strong><br>
+                {{ mesure.temperature }} °C -
+                {{ mesure.humidite }} %
+            </li>
+        {% endfor %}
+        </ul>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Résumé du jour</h2>
+
+        {% for piece, resume in daily_summary.items() %}
+
+            <h3>{{ piece }}</h3>
+
+            <p>
+                Température :
+                {{ resume.temp_min }} °C →
+                {{ resume.temp_max }} °C
+            </p>
+
+            <p>
+                Humidité :
+                {{ resume.hum_min }} % →
+                {{ resume.hum_max }} %
+            </p>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+
 <h2>🌡️ Température</h2>
 <canvas id="temperatureChart"></canvas>
 <h2>💧 Humidité</h2>

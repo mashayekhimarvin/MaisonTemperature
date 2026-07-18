@@ -79,8 +79,48 @@ def home():
         print(piece, len(valeurs))
 
     
+    temperatures_data = []
+    humidites_data = []
+
+    last_measures = {}
+
+    for t in temperatures:
+
+        temperatures_data.append(t[2])
+
+        if t[3] is not None:
+            humidites_data.append(t[3])
+
+        last_measures[t[1]] = {
+            "temperature": t[2],
+            "humidite": t[3],
+            "date": t[5]
+        }
+
+    
+    temp_min = min(temperatures_data)
+    temp_max = max(temperatures_data)
+
+    humidite_min = min(humidites_data)
+    humidite_max = max(humidites_data)
+
+
     print(temperatures[0])
     print(labels[:5])
+    daily_summary = {}
+
+    
+    for piece, valeurs in series.items():
+
+        humidites = humidity_series[piece]
+
+        daily_summary[piece] = {
+            "temp_min": min(valeurs),
+            "temp_max": max(valeurs),
+            "hum_min": min(humidites),
+            "hum_max": max(humidites)
+        }
+
 
     return render_template(
         "index.html",
@@ -92,7 +132,19 @@ def home():
         previous_day=previous_day,
         next_day=next_day,
         has_previous_day=has_previous_day,
-        has_next_day=has_next_day
+        has_next_day=has_next_day,
+
+        
+        temp_min=temp_min,
+        temp_max=temp_max,
+
+        humidite_min=humidite_min,
+        humidite_max=humidite_max,
+
+        last_measures=last_measures,
+
+        daily_summary=daily_summary
+
     )
 
 
