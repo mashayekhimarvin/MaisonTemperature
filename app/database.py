@@ -71,3 +71,27 @@ def get_temperatures():
     conn.close()
 
     return rows
+
+
+def get_temperatures_by_date(selected_date):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            piece,
+            temperature,
+            humidite,
+            date_mesure
+        FROM temperatures
+        WHERE DATE(date_mesure) = ?
+        ORDER BY date_mesure
+    """, (selected_date,))
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return rows
+

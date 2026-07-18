@@ -12,6 +12,23 @@
 <body>
 
 <h1>🏠 MaisonTemperature</h1>
+
+
+<div>
+    <a href="?date={{ previous_day }}">
+        ⬅️ Jour précédent
+    </a>
+
+    <form method="get" style="display:inline;">
+        <input type="date" name="date" value="{{ selected_date }}"
+               onchange="this.form.submit()">
+    </form>
+
+    <a href="?date={{ next_day }}">
+        Jour suivant ➡️
+    </a>
+</div>
+
 <canvas id="temperatureChart"></canvas>
 
 <table border="1">
@@ -41,48 +58,31 @@
 <script>
 
 
-const salon = {{ salon|tojson }};
-const chambre = {{ chambre|tojson }};
-const cuisine = {{ cuisine|tojson }};
 
+const series = {{ series|tojson }};
+const labels = {{ labels|tojson }};
 
-const labels = [];
+const datasets = [];
 
-for (let i = 0; i < salon.length; i++) {
-    labels.push("Mesure " + (i + 1));
+for (const [piece, valeurs] of Object.entries(series)) {
+
+    datasets.push({
+        label: piece,
+        data: valeurs,
+        fill: false
+    });
+
 }
 
 const ctx = document.getElementById("temperatureChart");
-
-
 
 new Chart(ctx, {
     type: "line",
     data: {
         labels: labels,
-        datasets: [
-            {
-                label: "Salon",
-                data: salon,
-                borderColor: "blue",
-                fill: false
-            },
-            {
-                label: "Chambre",
-                data: chambre,
-                borderColor: "red",
-                fill: false
-            },
-            {
-                label: "Cuisine",
-                data: cuisine,
-                borderColor: "green",
-                fill: false
-            }
-        ]
+        datasets: datasets
     }
 });
-
 
 </script>
 

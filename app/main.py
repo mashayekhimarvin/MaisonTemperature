@@ -1,6 +1,9 @@
 
-from flask import Flask, render_template
-from database import get_temperatures
+
+from flask import Flask, render_template, request
+from database import get_temperatures_by_date
+from datetime import datetime, timedelta
+
 
 app = Flask(
     __name__,
@@ -10,43 +13,61 @@ app = Flask(
 
 @app.route("/")
 def home():
-    temperatures = get_temperatures()
-    print("=== CONTENU SQLITE ===")
-    for t in temperatures:
-        print(t)
+    selected_date = request.args.get(
+        "date",
+        datetime.now().strftime("%Y-%m-%d")
+    )
 
+    temperatures = get_temperatures_by_date(
+        selected_date
+    )
     
-    labels = []
-    valeurs_temperature = []
-    salon = []
-    chambre = []
-    cuisine = []
 
+    current_day = datetime.strptime(
+        selected_date,
+        "%Y-%m-%d"
+    )
+
+    previous_day = (
+        current_day - timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+
+    next_day = (
+        current_day + timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+   
+    labels = []
+    series = {}
 
     for t in temperatures:
 
         piece = t[1]
         temperature = t[2]
-        labels.append(t[4])
-        valeurs_temperature.append(t[2])
+        heure = t[4][11:16]
 
+        if piece not in series:
+            series[piece] = []
+
+        # On utilise le Salon comme référence horaire
         if piece == "Salon":
-            salon.append(temperature)
+            labels.append(heure)
 
-        elif piece == "Chambre":
-            chambre.append(temperature)
+        series[piece].append(temperature)
 
-        elif piece == "Cuisine":
-            cuisine.append(temperature)
+    print("Labels :", len(labels))
 
+    for piece, valeurs in series.items():
+        print(piece, len(valeurs))
 
     
     return render_template(
         "index.html",
         temperatures=temperatures,
-        salon=salon,
-        chambre=chambre,
-        cuisine=cuisine
+        series=series,
+        labels=labels,
+        selected_date=selected_date,
+        previous_day=previous_day,
+        next_day=next_day
     )
 
 
