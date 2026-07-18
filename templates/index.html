@@ -15,22 +15,26 @@
 
 
 <div>
-    <a href="?date={{ previous_day }}">
+    {% if has_previous_day %}
+    <a  href="?date={{ previous_day }}">
         ⬅️ Jour précédent
     </a>
+    {% endif %}
 
     <form method="get" style="display:inline;">
         <input type="date" name="date" value="{{ selected_date }}"
                onchange="this.form.submit()">
     </form>
-
+    {% if has_next_day %}
     <a href="?date={{ next_day }}">
         Jour suivant ➡️
     </a>
+    {% endif %}
 </div>
-
+<h2>🌡️ Température</h2>
 <canvas id="temperatureChart"></canvas>
-
+<h2>💧 Humidité</h2>
+<canvas id="humidityChart"></canvas>
 <table border="1">
     <thead>
         <tr>
@@ -38,6 +42,7 @@
             <th>Pièce</th>
             <th>Température</th>
             <th>Humidité</th>
+            <th>Batterie</th>
             <th>Date</th>
         </tr>
     </thead>
@@ -49,7 +54,8 @@
             <td>{{ t[1] }}</td>
             <td>{{ t[2] }} °C</td>
             <td>{{ t[3] }} %</td>
-            <td>{{ t[4] }}</td>
+            <td>{{ t[4] }} %</td>
+            <td>{{ t[5] }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -57,12 +63,12 @@
 
 <script>
 
-
-
 const series = {{ series|tojson }};
+const humiditySeries = {{ humidity_series|tojson }};
 const labels = {{ labels|tojson }};
 
 const datasets = [];
+
 
 for (const [piece, valeurs] of Object.entries(series)) {
 
@@ -74,6 +80,20 @@ for (const [piece, valeurs] of Object.entries(series)) {
 
 }
 
+
+const humidityDatasets = [];
+
+for (const [piece, valeurs] of Object.entries(humiditySeries)) {
+
+    humidityDatasets.push({
+        label: piece,
+        data: valeurs,
+        fill: false
+    });
+
+}
+
+
 const ctx = document.getElementById("temperatureChart");
 
 new Chart(ctx, {
@@ -83,6 +103,18 @@ new Chart(ctx, {
         datasets: datasets
     }
 });
+
+
+const humidityCtx = document.getElementById("humidityChart");
+
+new Chart(humidityCtx, {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: humidityDatasets
+    }
+});
+
 
 </script>
 

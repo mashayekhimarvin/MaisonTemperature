@@ -1,7 +1,7 @@
 
 
 from flask import Flask, render_template, request
-from database import get_temperatures_by_date
+from database import (get_temperatures_by_date,has_data_for_date)
 from datetime import datetime, timedelta
 
 
@@ -36,23 +36,42 @@ def home():
         current_day + timedelta(days=1)
     ).strftime("%Y-%m-%d")
    
+
+    has_previous_day = has_data_for_date(
+        previous_day
+    )
+
+    has_next_day = has_data_for_date(
+        next_day
+    )
+
+
     labels = []
     series = {}
+    humidity_series = {}
 
     for t in temperatures:
 
         piece = t[1]
         temperature = t[2]
-        heure = t[4][11:16]
+        humidite = t[3]
+        heure = t[5][11:16]
 
         if piece not in series:
             series[piece] = []
 
         # On utilise le Salon comme référence horaire
-        if piece == "Salon":
+        
+        if heure not in labels:
             labels.append(heure)
 
+        
+        if piece not in humidity_series:
+            humidity_series[piece] = []
+
+
         series[piece].append(temperature)
+        humidity_series[piece].append(humidite)
 
     print("Labels :", len(labels))
 
@@ -60,14 +79,20 @@ def home():
         print(piece, len(valeurs))
 
     
+    print(temperatures[0])
+    print(labels[:5])
+
     return render_template(
         "index.html",
         temperatures=temperatures,
         series=series,
+        humidity_series=humidity_series,
         labels=labels,
         selected_date=selected_date,
         previous_day=previous_day,
-        next_day=next_day
+        next_day=next_day,
+        has_previous_day=has_previous_day,
+        has_next_day=has_next_day
     )
 
 
@@ -86,3 +111,9 @@ def home():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+from database import (
+    get_temperatures_by_date,
+    has_data_for_date
+)

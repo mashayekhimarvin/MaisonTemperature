@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import random
 import math
 
+batterie = random.randint(60, 100)
 
 def temp_exterieur(current):
 
@@ -91,21 +92,25 @@ while courant <= datetime.now():
 
         humidite = humidity(courant)
 
+
         cursor.execute("""
             INSERT INTO temperatures
             (
                 piece,
                 temperature,
                 humidite,
+                batterie,
                 date_mesure
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
         """, (
             piece,
             temperature,
             humidite,
+            batterie,
             courant.strftime("%Y-%m-%d %H:%M:%S")
         ))
+
 
     courant += timedelta(minutes=5)
 

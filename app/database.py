@@ -8,6 +8,23 @@ def get_connection():
     return sqlite3.connect(DB_PATH)
 
 
+def has_data_for_date(date):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM temperatures
+        WHERE DATE(date_mesure) = ?
+    """, (date,))
+
+    count = cursor.fetchone()[0]
+
+    conn.close()
+
+    return count > 0
+
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
@@ -59,6 +76,7 @@ def get_temperatures():
             piece,
             temperature,
             humidite,
+            batterie,       
             date_mesure
         FROM temperatures
         ORDER BY date_mesure DESC
@@ -83,6 +101,7 @@ def get_temperatures_by_date(selected_date):
             piece,
             temperature,
             humidite,
+            batterie,
             date_mesure
         FROM temperatures
         WHERE DATE(date_mesure) = ?
@@ -94,4 +113,7 @@ def get_temperatures_by_date(selected_date):
     conn.close()
 
     return rows
+
+
+
 

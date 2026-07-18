@@ -1,5 +1,15 @@
 
-from database import get_temperatures
+from database import get_connection
 
-for ligne in get_temperatures():
-    print(ligne)
+conn = get_connection()
+cursor = conn.cursor()
+
+cursor.execute("""
+ALTER TABLE temperatures
+ADD COLUMN batterie INTEGER
+""")
+
+conn.commit()
+conn.close()
+
+print("Colonne batterie ajoutée")
