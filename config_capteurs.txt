@@ -1,0 +1,123 @@
+
+Salon     ed:0f:05:46:2a:27
+
+Chambre   f2:a9:c2:c6:3c:2c
+
+Exterieur ec:0f:01:86:51:1d
+
+--------------------------
+
+
+temperature =
+    (byte3 - 128)
+    + (byte2 / 10.0);
+
+humidite =
+    byte4;
+
+
+--------------------------
+
+
+#include <BLEDevice.h>
+#include <BLEScan.h>
+
+BLEScan* pBLEScan;
+
+const String SALON_MAC =
+  "ed:0f:05:46:2a:27";
+
+const String CHAMBRE_MAC =
+  "f2:a9:c2:c6:3c:2c";
+
+const String EXTERIEUR_MAC =
+  "ec:0f:01:86:51:1d";
+
+void setup() {
+
+  Serial.begin(115200);
+
+  Serial.println();
+  Serial.println("=== SWITCHBOT DECODER ===");
+
+  BLEDevice::init("");
+
+  pBLEScan = BLEDevice::getScan();
+  pBLEScan->setActiveScan(true);
+}
+
+void loop() {
+
+  BLEScanResults* results =
+      pBLEScan->start(5);
+
+  int count = results->getCount();
+
+  Serial.println();
+  Serial.println("====================");
+
+  for (int i = 0; i < count; i++) {
+
+    BLEAdvertisedDevice device =
+        results->getDevice(i);
+
+    String mac =
+        device.getAddress().toString().c_str();
+
+    String piece = "";
+
+    if (mac == SALON_MAC) {
+      piece = "SALON";
+    }
+    else if (mac == CHAMBRE_MAC) {
+      piece = "CHAMBRE";
+    }
+    else if (mac == EXTERIEUR_MAC) {
+      piece = "EXTERIEUR";
+    }
+
+    if (piece == "")
+      continue;
+
+    if (!device.haveManufacturerData())
+      continue;
+
+    String data =
+      device.getManufacturerData();
+
+    if (data.length() < 14)
+      continue;
+
+    uint8_t byte2 =
+      (uint8_t)data[10];
+
+    uint8_t byte3 =
+      (uint8_t)data[11];
+
+    uint8_t byte4 =
+      (uint8_t)data[12];
+
+    float temperature =
+      (byte3 - 128) +
+      (byte2 / 10.0);
+
+    int humidite =
+      byte4;
+
+    Serial.println();
+    Serial.println(piece);
+
+    Serial.print("Temperature : ");
+    Serial.print(temperature, 1);
+    Serial.println(" °C");
+
+    Serial.print("Humidite    : ");
+    Serial.print(humidite);
+    Serial.println(" %");
+
+    Serial.print("RSSI        : ");
+    Serial.println(device.getRSSI());
+  }
+
+  delay(5000);
+}
