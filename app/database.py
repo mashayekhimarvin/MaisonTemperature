@@ -45,7 +45,7 @@ def init_db():
     conn.close()
 
 
-def add_temperature(piece, temperature,humidite):
+def add_temperature(piece, temperature,humidite,batterie):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -54,10 +54,11 @@ def add_temperature(piece, temperature,humidite):
         INSERT INTO temperatures (
             piece,
             temperature,
-            humidite
+            humidite,
+            batterie
         )
-        VALUES (?, ?, ?)
-    """, (piece, temperature, humidite))
+        VALUES (?, ?, ?, ?)
+    """, (piece, temperature, humidite,batterie))
 
 
     conn.commit()

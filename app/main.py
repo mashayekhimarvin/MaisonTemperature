@@ -1,7 +1,7 @@
 
 
-from flask import Flask, render_template, request
-from database import (get_temperatures_by_date,has_data_for_date)
+from flask import Flask, render_template, request, jsonify
+from database import (get_temperatures_by_date,has_data_for_date,add_temperature)
 from datetime import datetime, timedelta
 
 
@@ -46,9 +46,10 @@ def home():
     )
 
 
+
     labels = []
-    series = {}
-    humidity_series = {}
+    timeline = {}
+    pieces = set()
 
     for t in temperatures:
 
@@ -57,21 +58,47 @@ def home():
         humidite = t[3]
         heure = t[5][11:16]
 
-        if piece not in series:
-            series[piece] = []
+        pieces.add(piece)
 
-        # On utilise le Salon comme référence horaire
-        
-        if heure not in labels:
+        if heure not in timeline:
+
+            timeline[heure] = {}
+
             labels.append(heure)
 
-        
-        if piece not in humidity_series:
-            humidity_series[piece] = []
+        timeline[heure][piece] = {
+            "temperature": temperature,
+            "humidite": humidite
+        }
 
+    series = {}
+    humidity_series = {}
 
-        series[piece].append(temperature)
-        humidity_series[piece].append(humidite)
+    for piece in pieces:
+
+        series[piece] = []
+        humidity_series[piece] = []
+
+        for heure in labels:
+
+            if (
+                heure in timeline
+                and piece in timeline[heure]
+            ):
+
+                series[piece].append(
+                    timeline[heure][piece]["temperature"]
+                )
+
+                humidity_series[piece].append(
+                    timeline[heure][piece]["humidite"]
+                )
+
+            else:
+
+                series[piece].append(None)
+                humidity_series[piece].append(None)
+
 
     print("Labels :", len(labels))
 
@@ -98,8 +125,35 @@ def home():
         }
 
     
+
+
+    if not temperatures_data:
+
+        return render_template(
+            "index.html",
+            temperatures=[],
+            series={},
+            humidity_series={},
+            labels=[],
+            selected_date=selected_date,
+            previous_day=previous_day,
+            next_day=next_day,
+            has_previous_day=has_previous_day,
+            has_next_day=has_next_day,
+            temp_min=0,
+            temp_max=0,
+            humidite_min=0,
+            humidite_max=0,
+            last_measures={},
+            daily_summary={}
+        )
+
+
+
     temp_min = min(temperatures_data)
     temp_max = max(temperatures_data)
+
+
 
     humidite_min = min(humidites_data)
     humidite_max = max(humidites_data)
@@ -114,12 +168,34 @@ def home():
 
         humidites = humidity_series[piece]
 
+
+        valeurs_valides = [
+            v for v in valeurs
+            if v is not None
+        ]
+
+        humidites_valides = [
+            h for h in humidites
+            if h is not None
+        ]
+
         daily_summary[piece] = {
-            "temp_min": min(valeurs),
-            "temp_max": max(valeurs),
-            "hum_min": min(humidites),
-            "hum_max": max(humidites)
+            "temp_min": min(valeurs_valides),
+            "temp_max": max(valeurs_valides),
+            "hum_min": min(humidites_valides),
+            "hum_max": max(humidites_valides)
         }
+
+
+
+    print("Labels :", len(labels))
+
+    for piece, valeurs in series.items():
+
+        print(
+            piece,
+            len(valeurs)
+        )
 
 
     return render_template(
@@ -147,25 +223,46 @@ def home():
 
     )
 
+@app.route(
+    "/api/measurement",
+    methods=["POST"]
+)
+def receive_measurement():
+
+    data = request.get_json()
+
+    piece = data["piece"]
+    temperature = data["temperature"]
+    humidite = data["humidite"]
+    batterie = data["batterie"]
+
+    add_temperature(
+        piece,
+        temperature,
+        humidite,
+        batterie
+    )
+
+    print("")
+    print("=== MESURE ENREGISTREE ===")
+    print(
+        f"{piece} | "
+        f"{temperature}°C | "
+        f"{humidite}%  | "
+        f"{batterie}%"
+    )
+
+    return jsonify({
+        "status": "ok"
+    })
 
 
-    # for t in temperatures:
-    #     labels.append(t[4])
-    #     valeurs_temperature.append(t[2])
-
-    # return render_template(
-    #     "index.html",
-    #     temperatures=temperatures,
-    #     labels=labels,
-    #     valeurs_temperature=valeurs_temperature
-    # )
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
 
-
-from database import (
-    get_temperatures_by_date,
-    has_data_for_date
-)

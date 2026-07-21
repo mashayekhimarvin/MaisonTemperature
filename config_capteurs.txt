@@ -18,12 +18,25 @@ humidite =
 
 --------------------------
 
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 #include <BLEDevice.h>
 #include <BLEScan.h>
 
+unsigned long dernierScan = -60000;
+
 BLEScan* pBLEScan;
 
+// WIFI
+const char* ssid = "Bbox-123456789";
+const char* password = "Px5sFX6S2DFdtXtCrs";
+
+// Flask
+const char* API_URL =
+  "http://192.168.1.48:5000/api/measurement";
+
+// MAC SwitchBot
 const String SALON_MAC =
   "ed:0f:05:46:2a:27";
 
@@ -33,28 +46,216 @@ const String CHAMBRE_MAC =
 const String EXTERIEUR_MAC =
   "ec:0f:01:86:51:1d";
 
+
+
+bool verifierWifi() {
+
+  if (WiFi.status() == WL_CONNECTED) {
+    return true;
+  }
+
+  Serial.println();
+  Serial.println("WIFI PERDU");
+  Serial.println("Tentative de reconnexion...");
+
+  WiFi.disconnect();
+  delay(1000);
+
+  Serial.println("AVANT WIFI");
+
+  WiFi.begin(
+    ssid,
+    password
+  );
+
+
+  Serial.println("APRES WIFI");
+
+  int timeout = 0;
+
+  while (
+    WiFi.status() != WL_CONNECTED &&
+    timeout < 20
+  ) {
+
+    delay(500);
+    Serial.print(".");
+
+    timeout++;
+  }
+
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    Serial.println("WIFI RECONNECTE");
+
+    Serial.print("IP = ");
+    Serial.println(
+      WiFi.localIP()
+    );
+
+    return true;
+  }
+
+  Serial.println("ECHEC RECONNEXION");
+
+  return false;
+}
+
+
+void envoyerMesure(
+  String piece,
+  float temperature,
+  int humidite,
+  int batterie
+)
+ {
+
+  HTTPClient http;
+
+  http.begin(API_URL);
+
+  http.addHeader(
+    "Content-Type",
+    "application/json"
+  );
+
+
+
+  String json = "{";
+
+  json += "\"piece\":\"";
+  json += piece;
+  json += "\",";
+
+  json += "\"temperature\":";
+  json += String(temperature, 1);
+  json += ",";
+
+  json += "\"humidite\":";
+  json += String(humidite);
+  json += ",";
+
+  json += "\"batterie\":";
+  json += String(batterie);
+
+  json += "}";
+
+  Serial.println();
+  Serial.println("JSON ENVOYE :");
+  Serial.println(json);
+
+  int httpCode = http.POST(json);
+
+  Serial.print("HTTP = ");
+  Serial.println(httpCode);
+
+  if (httpCode > 0) {
+
+    String response =
+      http.getString();
+
+    Serial.println(response);
+  }
+
+  http.end();
+}
+
 void setup() {
 
   Serial.begin(115200);
 
+  delay(3000);
+
   Serial.println();
   Serial.println("=== SWITCHBOT DECODER ===");
 
+  // WIFI
+
+  Serial.print("Connexion WIFI");
+  WiFi.mode(WIFI_STA);
+
+  WiFi.begin(
+    ssid,
+    password
+  );
+  
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+
+
+
+  int timeout = 0;
+
+  while (
+    WiFi.status() != WL_CONNECTED &&
+    timeout < 60
+  ) {
+
+    Serial.print(".");
+    delay(500);
+
+    timeout++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    Serial.println();
+    Serial.println("WIFI OK");
+
+    Serial.print("IP = ");
+    Serial.println(
+      WiFi.localIP()
+    );
+
+  } else {
+
+    Serial.println();
+    Serial.println(
+      "WIFI NON DISPONIBLE AU DEMARRAGE"
+    );
+  }
+  
+
+  // BLE
+
   BLEDevice::init("");
 
-  pBLEScan = BLEDevice::getScan();
+  pBLEScan =
+      BLEDevice::getScan();
+
   pBLEScan->setActiveScan(true);
 }
 
+
 void loop() {
+
+  if (!verifierWifi()) {
+
+    delay(5000);
+    return;
+  }
+
+  // 1 envoi toutes les 60 secondes
+
+  if (millis() - dernierScan < 60000) {
+
+    delay(1000);
+    return;
+  }
+
+  dernierScan = millis();
 
   BLEScanResults* results =
       pBLEScan->start(5);
 
-  int count = results->getCount();
+  int count =
+      results->getCount();
 
   Serial.println();
   Serial.println("====================");
+  Serial.println("NOUVEAU SCAN");
 
   for (int i = 0; i < count; i++) {
 
@@ -62,17 +263,26 @@ void loop() {
         results->getDevice(i);
 
     String mac =
-        device.getAddress().toString().c_str();
+        device.getAddress()
+              .toString()
+              .c_str();
 
     String piece = "";
 
     if (mac == SALON_MAC) {
+
       piece = "SALON";
     }
-    else if (mac == CHAMBRE_MAC) {
+    else if (
+      mac == CHAMBRE_MAC
+    ) {
+
       piece = "CHAMBRE";
     }
-    else if (mac == EXTERIEUR_MAC) {
+    else if (
+      mac == EXTERIEUR_MAC
+    ) {
+
       piece = "EXTERIEUR";
     }
 
@@ -98,26 +308,67 @@ void loop() {
       (uint8_t)data[12];
 
     float temperature =
-      (byte3 - 128) +
+      (byte3 - 128)
+      +
       (byte2 / 10.0);
 
     int humidite =
       byte4;
 
+    
+    int batterie = -1;
+
+    if (device.haveServiceData()) {
+
+      String serviceData =
+          device.getServiceData();
+
+      if (serviceData.length() >= 3) {
+
+        batterie =
+          ((uint8_t)serviceData[2]) & 0x7F;
+      }
+    }
+
+
     Serial.println();
     Serial.println(piece);
 
-    Serial.print("Temperature : ");
-    Serial.print(temperature, 1);
+    Serial.print(
+      "Temperature : "
+    );
+    Serial.print(
+      temperature,
+      1
+    );
     Serial.println(" °C");
 
-    Serial.print("Humidite    : ");
-    Serial.print(humidite);
+    Serial.print(
+      "Humidite    : "
+    );
+    Serial.print(
+      humidite
+    );
     Serial.println(" %");
 
-    Serial.print("RSSI        : ");
-    Serial.println(device.getRSSI());
+    Serial.print(
+      "RSSI        : "
+    );
+    Serial.println(
+      device.getRSSI()
+    );
+
+
+    envoyerMesure(
+      piece,
+      temperature,
+      humidite,
+      batterie
+    );
+
   }
 
-  delay(5000);
+  pBLEScan->clearResults();
 }
+
+
