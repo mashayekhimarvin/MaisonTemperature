@@ -31,7 +31,7 @@ BLEScan* pBLEScan;
 
 // WIFI
 const char* ssid = "Bbox-123456789";
-const char* password = "Px5sFX6S2DFdtXtCrs";
+const char* password = "";
 
 // Flask
 const char* API_URL =
