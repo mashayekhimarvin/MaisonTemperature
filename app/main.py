@@ -3,6 +3,22 @@
 from flask import Flask, render_template, request, jsonify
 from database import (get_temperatures_by_date,has_data_for_date,add_temperature)
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+def utc_to_paris(date_str):
+
+    dt = datetime.strptime(
+        date_str,
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    dt = dt.replace(
+        tzinfo=ZoneInfo("UTC")
+    )
+
+    return dt.astimezone(
+        ZoneInfo("Europe/Paris")
+    )
 
 
 app = Flask(
@@ -52,11 +68,17 @@ def home():
     pieces = set()
 
     for t in temperatures:
-
+      
         piece = t[1]
         temperature = t[2]
         humidite = t[3]
-        heure = t[5][11:16]
+
+
+        date_mesure = utc_to_paris(t[5])
+
+        heure = date_mesure.strftime("%H:%M")
+
+
 
         pieces.add(piece)
 
@@ -100,11 +122,6 @@ def home():
                 humidity_series[piece].append(None)
 
 
-    print("Labels :", len(labels))
-
-    for piece, valeurs in series.items():
-        print(piece, len(valeurs))
-
     
     temperatures_data = []
     humidites_data = []
@@ -118,11 +135,47 @@ def home():
         if t[3] is not None:
             humidites_data.append(t[3])
 
+
+
+        date_mesure = utc_to_paris(t[5])
+        
+
+        delta = (datetime.now(ZoneInfo("Europe/Paris"))
+            - date_mesure)
+
+
+        minutes = int(delta.total_seconds() / 60)
+
+        if minutes <= 0:
+
+            last_seen = "à l'instant"
+
+        elif minutes == 1:
+
+            last_seen = "il y a 1 minute"
+
+        elif minutes < 60:
+
+            last_seen = f"il y a {minutes} minutes"
+
+        else:
+
+            heures = minutes // 60
+
+            if heures == 1:
+                last_seen = "il y a 1 heure"
+            else:
+                last_seen = f"il y a {heures} heures"
+
+
         last_measures[t[1]] = {
             "temperature": t[2],
             "humidite": t[3],
-            "date": t[5]
+            "batterie": t[4],
+            "date": t[5],
+            "last_seen": last_seen
         }
+
 
     
 
@@ -131,7 +184,6 @@ def home():
 
         return render_template(
             "index.html",
-            temperatures=[],
             series={},
             humidity_series={},
             labels=[],
@@ -158,9 +210,6 @@ def home():
     humidite_min = min(humidites_data)
     humidite_max = max(humidites_data)
 
-
-    print(temperatures[0])
-    print(labels[:5])
     daily_summary = {}
 
     
@@ -187,9 +236,6 @@ def home():
         }
 
 
-
-    print("Labels :", len(labels))
-
     for piece, valeurs in series.items():
 
         print(
@@ -200,7 +246,6 @@ def home():
 
     return render_template(
         "index.html",
-        temperatures=temperatures,
         series=series,
         humidity_series=humidity_series,
         labels=labels,
@@ -235,6 +280,7 @@ def receive_measurement():
     temperature = data["temperature"]
     humidite = data["humidite"]
     batterie = data["batterie"]
+    
 
     add_temperature(
         piece,
@@ -242,6 +288,9 @@ def receive_measurement():
         humidite,
         batterie
     )
+
+
+
 
     print("")
     print("=== MESURE ENREGISTREE ===")
@@ -257,9 +306,7 @@ def receive_measurement():
     })
 
 
-
-
-if __name__ == "__main__":
+if __name__ == "__main__": 
     app.run(
         host="0.0.0.0",
         port=5000,

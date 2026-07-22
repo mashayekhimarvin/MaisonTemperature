@@ -35,44 +35,41 @@
 
 <div class="dashboard-summary">
     <div class="card">
-        <h2>Dernières mesures</h2>
-        <ul class="last-measures">
-        {% for piece, mesure in last_measures.items() %}
-            <li>
-                <strong>{{ piece }}</strong><br>
-                {{ mesure.temperature }} °C -
-                {{ mesure.humidite }} %
-            </li>
-        {% endfor %}
-        </ul>
+
+        <div class="sensor-cards">
+
+            {% for piece, mesure in last_measures.items() %}
+
+            <div class="sensor-card">
+
+                <h3>{{ piece }}</h3>
+
+                <p>
+                    🌡️ {{ mesure.temperature }} °C
+                </p>
+
+                <p>
+                    💧 {{ mesure.humidite }} %
+                </p>
+
+                <p>
+                    🔋 {{ mesure.batterie }} %
+                </p>
+
+                <small>
+                    {{ mesure.last_seen }}
+                </small>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
 
     </div>
 
-    <div class="card">
 
-        <h2>Résumé du jour</h2>
-
-        {% for piece, resume in daily_summary.items() %}
-
-            <h3>{{ piece }}</h3>
-
-            <p>
-                Température :
-                {{ resume.temp_min }} °C →
-                {{ resume.temp_max }} °C
-            </p>
-
-            <p>
-                Humidité :
-                {{ resume.hum_min }} % →
-                {{ resume.hum_max }} %
-            </p>
-
-        {% endfor %}
-
-    </div>
-
-</div>
+</div>   
 
 
 
@@ -80,31 +77,34 @@
 <canvas id="temperatureChart"></canvas>
 <h2>💧 Humidité</h2>
 <canvas id="humidityChart"></canvas>
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Pièce</th>
-            <th>Température</th>
-            <th>Humidité</th>
-            <th>Batterie</th>
-            <th>Date</th>
-        </tr>
-    </thead>
 
-    <tbody>
-        {% for t in temperatures %}
-        <tr>
-            <td>{{ t[0] }}</td>
-            <td>{{ t[1] }}</td>
-            <td>{{ t[2] }} °C</td>
-            <td>{{ t[3] }} %</td>
-            <td>{{ t[4] }} %</td>
-            <td>{{ t[5] }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+
+
+    <div class="card">
+
+            <h2>Résumé du jour</h2>
+
+            {% for piece, resume in daily_summary.items() %}
+
+                <h3>{{ piece }}</h3>
+
+                <p>
+                    Température :
+                    {{ resume.temp_min }} °C →
+                    {{ resume.temp_max }} °C
+                </p>
+
+                <p>
+                    Humidité :
+                    {{ resume.hum_min }} % →
+                    {{ resume.hum_max }} %
+                </p>
+
+            {% endfor %}
+
+    </div>
+
+
 
 <script>
 
