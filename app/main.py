@@ -1,7 +1,7 @@
 
 
 from flask import Flask, render_template, request, jsonify
-from database import (get_temperatures_by_date,has_data_for_date,add_temperature)
+from database import (get_temperatures_by_date,has_data_for_date,add_temperature,init_db)
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -20,7 +20,7 @@ def utc_to_paris(date_str):
         ZoneInfo("Europe/Paris")
     )
 
-
+init_db()
 app = Flask(
     __name__,
     template_folder="../templates",

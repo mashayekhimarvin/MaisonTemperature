@@ -30,15 +30,18 @@ def init_db():
     cursor = conn.cursor()
 
 
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS temperatures (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             piece TEXT NOT NULL,
             temperature REAL NOT NULL,
             humidite REAL NOT NULL,
+            batterie INTEGER,
             date_mesure TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
 
 
     conn.commit()
