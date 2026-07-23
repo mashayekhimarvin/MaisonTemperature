@@ -7,6 +7,29 @@ DB_PATH = "database/maison.db"
 def get_connection():
     return sqlite3.connect(DB_PATH)
 
+def get_last_battery(piece):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT batterie
+        FROM temperatures
+        WHERE piece = ?
+        AND batterie != -1
+        ORDER BY date_mesure DESC
+        LIMIT 1
+    """, (piece,))
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    if row:
+        return row[0]
+
+    return None
+
 
 def has_data_for_date(date):
 
@@ -49,6 +72,16 @@ def init_db():
 
 
 def add_temperature(piece, temperature,humidite,batterie):
+    if batterie == -1:
+
+        derniere_batterie = get_last_battery(
+            piece
+        )
+
+        if derniere_batterie is not None:
+            batterie = derniere_batterie
+
+
     conn = get_connection()
     cursor = conn.cursor()
 
